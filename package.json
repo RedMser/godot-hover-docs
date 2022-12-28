@@ -3,6 +3,11 @@
   "displayName": "Godot Hover Docs",
   "description": "Show XML documentation when hovering symbols in Godot's C++ code.",
   "version": "0.0.1",
+  "icon": "icon.png",
+  "author": {
+    "name": "RedMser"
+  },
+  "publisher": "RedMser",
   "repository": {
     "url": "https://github.com/RedMser/godot-hover-docs"
   },
