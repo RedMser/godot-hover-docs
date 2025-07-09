@@ -11,13 +11,10 @@ export function activate(context: ExtensionContext) {
 		xmlCache.updateXML(file, exists);
 		// TODO: This line could be skipped when XMLWatcher initializes, to save redundant getClassnames() calls.
 		docsParser.validClassnames = xmlCache.getClassnames();
-		console.log("updated classnames:", docsParser.validClassnames);
 	});
 	context.subscriptions.push(xmlWatcher);
 
 	commands.registerCommand('godot-hover-docs.followLink', async ({ classname, symbol, kind }) => {
-		console.log("command args:", classname, symbol, kind);
-
 		const symbols = (await commands.executeCommand<SymbolInformation[]>('vscode.executeWorkspaceSymbolProvider', symbol)) ?? [];
 
 		const matchesKind = (filter: SymbolKind, actual: SymbolKind) => {
