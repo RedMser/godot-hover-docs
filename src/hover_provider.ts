@@ -26,10 +26,9 @@ export class GodotXMLHoverProvider implements HoverProvider {
                     value = content;
                 }
 
-                const toTryList = ["detectClass", "detectMethod", "detectProperty"];
+                const toTryList = ["detectClass", "detectMethod", "detectProperty"] as const;
                 for (const toTry of toTryList) {
-                    // TYPE HACK
-                    const result = await this[toTry as unknown as "detectClass"](value);
+                    const result = await this[toTry](value);
                     if (result !== undefined) {
                         contents.push(new MarkdownString(result));
                         break;
