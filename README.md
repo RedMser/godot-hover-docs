@@ -1,3 +1,5 @@
+[![VSCode Marketplace](https://vsmarketplacebadges.dev/version/RedMser.godot-hover-docs.svg)](https://marketplace.visualstudio.com/items?itemName=RedMser.godot-hover-docs)
+
 # Godot Hover Docs
 
 Show documentation when hovering symbols in Godot's C++ code, by parsing the documentation XML files.
