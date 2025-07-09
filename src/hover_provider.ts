@@ -1,6 +1,6 @@
 import { CancellationToken, commands, Hover, HoverProvider, MarkdownString, Position, TextDocument } from 'vscode';
-import * as Docs from './docs_parsing';
 import { DocsData } from './xml_cache';
+import { DocsParser } from './docs_parsing';
 
 const sanitizeRegex = /\*|&|<[^<>]+>/g;
 const classRegex = /^```cpp\s+class\s(\S+?)\s+```$/s;
@@ -10,7 +10,10 @@ const propertyRegex = /^```cpp.+?(\S+?)::(?:Data::)?(\S+?)\s+```$/s;
 export class GodotXMLHoverProvider implements HoverProvider {
     isQuerying = false;
 
-    constructor(public findXML: (classname: string) => Promise<DocsData | undefined>) {}
+    constructor(
+        public docsParser: DocsParser,
+        public findXML: (classname: string) => Promise<DocsData | undefined>,
+    ) {}
 
     async provideHover(document: TextDocument, position: Position, token: CancellationToken): Promise<Hover | null | undefined> {
         if (this.isQuerying) {
@@ -72,7 +75,7 @@ export class GodotXMLHoverProvider implements HoverProvider {
         if (!docs?.class) {
             return undefined;
         }
-        return Docs.getClassDescription(match[1], docs);
+        return this.docsParser.getClassDescription(match[1], docs);
     }
 
     async detectMethod(text: string): Promise<string | undefined> {
@@ -84,7 +87,7 @@ export class GodotXMLHoverProvider implements HoverProvider {
         if (!docs?.class) {
             return undefined;
         }
-        return Docs.getMethodDescription(match[1], docs, match[2]);
+        return this.docsParser.getMethodDescription(match[1], docs, match[2]);
     }
 
     async detectProperty(text: string): Promise<string | undefined> {
@@ -96,6 +99,6 @@ export class GodotXMLHoverProvider implements HoverProvider {
         if (!docs?.class) {
             return undefined;
         }
-        return Docs.getPropertyDescription(match[1], docs, match[2]);
+        return this.docsParser.getPropertyDescription(match[1], docs, match[2]);
     }
 }

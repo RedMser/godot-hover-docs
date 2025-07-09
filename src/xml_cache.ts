@@ -2,6 +2,8 @@ import { Uri, workspace } from "vscode";
 import { XMLParser } from "fast-xml-parser";
 import { TextDecoder } from "util";
 
+const fileToClassnameRegex = /\/([^\/]+)\.xml$/i;
+
 export class GodotXMLCache {
     /** `true` if file exists, `false` if file is deleted, docs data otherwise. `undefined` means we don't know about this file. */
     private _cache: Record<string, boolean | DocsData> = {};
@@ -39,6 +41,12 @@ export class GodotXMLCache {
     updateXML(file: Uri, exists: boolean) {
         // Hello cache
         this._cache[file.toString()] = exists;
+    }
+
+    getClassnames(): string[] {
+        return Object.keys(this._cache)
+            .map(filename => filename.match(fileToClassnameRegex)?.[1])
+            .filter((classname): classname is string => !!classname);
     }
 }
 

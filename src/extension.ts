@@ -2,10 +2,17 @@ import { commands, ExtensionContext, languages, SymbolInformation, SymbolKind, T
 import { GodotXMLHoverProvider } from './hover_provider';
 import { GodotXMLCache } from './xml_cache';
 import { GodotXMLWatcher } from './xml_watcher';
+import { DocsParser } from './docs_parsing';
 
 export function activate(context: ExtensionContext) {
+	const docsParser = new DocsParser();
 	const xmlCache = new GodotXMLCache();
-	const xmlWatcher = new GodotXMLWatcher((file, exists) => xmlCache.updateXML(file, exists));
+	const xmlWatcher = new GodotXMLWatcher((file, exists) => {
+		xmlCache.updateXML(file, exists);
+		// TODO: This line could be skipped when XMLWatcher initializes, to save redundant getClassnames() calls.
+		docsParser.validClassnames = xmlCache.getClassnames();
+		console.log("updated classnames:", docsParser.validClassnames);
+	});
 	context.subscriptions.push(xmlWatcher);
 
 	commands.registerCommand('godot-hover-docs.followLink', async ({ classname, symbol, kind }) => {
@@ -19,7 +26,15 @@ export function activate(context: ExtensionContext) {
 				actual = SymbolKind.Method;
 			} else if (actual === SymbolKind.Field) {
 				actual = SymbolKind.Property;
+			} else if (actual === SymbolKind.Constructor) {
+				actual = SymbolKind.Class;
 			}
+
+			if (filter === SymbolKind.Class) {
+				// We're going to show the constructor, which is a method.
+				filter = SymbolKind.Method;
+			}
+
 			return filter === actual;
 		};
 
@@ -55,7 +70,10 @@ export function activate(context: ExtensionContext) {
 
 	languages.registerHoverProvider([
 		{ language: "cpp" }, { language: "h" }
-	], new GodotXMLHoverProvider((name) => xmlCache.findXML(name)));
+	], new GodotXMLHoverProvider(
+		docsParser,
+		(name) => xmlCache.findXML(name)),
+	);
 
 	workspace.onDidChangeWorkspaceFolders(() => {
 		xmlWatcher.recreateWatcher();
