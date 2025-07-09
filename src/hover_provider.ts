@@ -40,7 +40,9 @@ export class GodotXMLHoverProvider implements HoverProvider {
                 for (const toTry of toTryList) {
                     const result = await this[toTry](value);
                     if (result !== undefined) {
-                        contents.push(new MarkdownString(result));
+                        const md = new MarkdownString(result);
+                        md.isTrusted = { enabledCommands: ['godot-hover-docs.followLink'] };
+                        contents.push(md);
                         break;
                     }
                 }
@@ -70,7 +72,7 @@ export class GodotXMLHoverProvider implements HoverProvider {
         if (!docs?.class) {
             return undefined;
         }
-        return Docs.getClassDescription(docs);
+        return Docs.getClassDescription(match[1], docs);
     }
 
     async detectMethod(text: string): Promise<string | undefined> {
@@ -82,7 +84,7 @@ export class GodotXMLHoverProvider implements HoverProvider {
         if (!docs?.class) {
             return undefined;
         }
-        return Docs.getMethodDescription(docs, match[2]);
+        return Docs.getMethodDescription(match[1], docs, match[2]);
     }
 
     async detectProperty(text: string): Promise<string | undefined> {
@@ -94,6 +96,6 @@ export class GodotXMLHoverProvider implements HoverProvider {
         if (!docs?.class) {
             return undefined;
         }
-        return Docs.getPropertyDescription(docs, match[2]);
+        return Docs.getPropertyDescription(match[1], docs, match[2]);
     }
 }
