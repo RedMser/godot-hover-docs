@@ -50,18 +50,20 @@ export function activate(context: ExtensionContext) {
 			return sym.name.startsWith(nameCheck);
 		});
 
-		if (!candidates.length) {
-			return window.showErrorMessage(`Could not find link target: ${symbol}`);
-		}
-
-		const location = candidates[0].location;
-		const doc = await workspace.openTextDocument(location.uri);
-		await window.showTextDocument(doc);
-
+		const errorMessage = `Could not find link target: ${symbol}`;
 		if (candidates.length === 1) {
-			commands.executeCommand('editor.action.goToLocations', doc.uri, location.range.start, [], 'goto');
+			// Change current location to the target.
+			const location = candidates[0].location;
+			const doc = await workspace.openTextDocument(location.uri);
+			commands.executeCommand('editor.action.goToLocations', doc.uri, location.range.start, [], 'goto', '');
 		} else {
-			commands.executeCommand('editor.action.goToLocations', doc.uri, location.range.start, candidates.map(c => c.location), 'peek');
+			// Keep current document open but show alternative location choices.
+			const ed = window.activeTextEditor;
+			if (ed) {
+				commands.executeCommand('editor.action.goToLocations', ed.document.uri, ed.selection.active, candidates.map(c => c.location), 'peek', errorMessage);
+			} else {
+				return window.showErrorMessage(`Could not follow link target ${symbol} because of no active text editor.`);
+			}
 		}
 	});
 
