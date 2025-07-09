@@ -2,6 +2,11 @@ import { CancellationToken, commands, Hover, HoverProvider, MarkdownString, Posi
 import * as Docs from './docs_parsing';
 import { DocsData } from './xml_cache';
 
+const sanitizeRegex = /\*|&|<[^<>]+>/g;
+const classRegex = /^```cpp\s+class\s(\S+?)\s+```$/s;
+const methodRegex = /^```cpp.+?(\S+?)::(?:Data::)?(\S+?)\(/s;
+const propertyRegex = /^```cpp.+?(\S+?)::(?:Data::)?(\S+?)\s+```$/s;
+
 export class GodotXMLHoverProvider implements HoverProvider {
     isQuerying = false;
 
@@ -26,6 +31,11 @@ export class GodotXMLHoverProvider implements HoverProvider {
                     value = content;
                 }
 
+                // Remove all pointers, references and generic types.
+                // Since generic types can be recursive, we keep applying the regex until we reach
+                // a stable value.
+                value = this.sanitizeValue(value);
+
                 const toTryList = ["detectClass", "detectMethod", "detectProperty"] as const;
                 for (const toTry of toTryList) {
                     const result = await this[toTry](value);
@@ -40,10 +50,18 @@ export class GodotXMLHoverProvider implements HoverProvider {
         return { contents };
     }
 
-    // TODO: These regexes do not handle pointers well yet! Since they use spaces AND attach an * to the classname
+    sanitizeValue(text: string): string {
+        while (true) {
+            const newText = text.replace(sanitizeRegex, '');
+            if (newText === text) {
+                break;
+            }
+            text = newText;
+        }
+        return text;
+    }
 
     async detectClass(text: string): Promise<string | undefined> {
-        const classRegex = /^```cpp\s+class\s(\S+?)\s+```$/s;
         const match = classRegex.exec(text);
         if (!match) {
             return undefined;
@@ -56,7 +74,6 @@ export class GodotXMLHoverProvider implements HoverProvider {
     }
 
     async detectMethod(text: string): Promise<string | undefined> {
-        const methodRegex = /^```cpp.+?(\S+?)::(?:Data::)?(\S+?)\(/s;
         const match = methodRegex.exec(text);
         if (!match) {
             return undefined;
@@ -69,7 +86,6 @@ export class GodotXMLHoverProvider implements HoverProvider {
     }
 
     async detectProperty(text: string): Promise<string | undefined> {
-        const propertyRegex = /^```cpp.+?(\S+?)::(?:Data::)?(\S+?)\s+```$/s;
         const match = propertyRegex.exec(text);
         if (!match) {
             return undefined;
